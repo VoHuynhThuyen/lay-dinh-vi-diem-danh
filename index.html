@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Gửi Định Vị Trước Khi Làm Bài</title>
+<style>
+body { font-family: Arial, sans-serif; text-align: center; margin-top: 40px; }
+#status { color: green; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<h2>📍 Vui lòng cho phép định vị để tiếp tục làm bài</h2>
+<div id="status">⏳ Đang lấy vị trí...</div>
+
+<script>
+// Mã entry cho các câu hỏi trong Google Form
+const gpsField = "entry.1014854034";
+const addressField = "entry.675148276";
+
+// URL của Google Form
+const formUrl = "https://docs.google.com/forms/d/e/1FAIpQLSeDxjzSU5rjlQiR9z_8LQUEcJc7cSg3mQvQkzSikIzxaf1phw/formResponse";
+
+// Chức năng gửi thông tin định vị vào Google Form
+function sendToGoogleForm(lat, lon, address) {
+const params = new URLSearchParams();
+params.append(gpsField, `${lat}, ${lon}`);
+params.append(addressField, address);
+
+fetch(formUrl, {
+method: "POST",
+mode: "no-cors",
+body: params
+}).then(() => {
+document.getElementById("status").innerText = "✅ Định vị đã gửi thành công! Bạn có thể tiếp tục làm bài.";
+// Sau khi gửi định vị, sinh viên sẽ được chuyển đến Google Form để làm bài
+setTimeout(() => {
+window.location.href = "https://docs.google.com/forms/d/e/1FAIpQLSeDxjzSU5rjlQiR9z_8LQUEcJc7cSg3mQvQkzSikIzxaf1phw/viewform";
+}, 2000);
+}).catch(() => {
+document.getElementById("status").innerText = "❌ Gửi định vị thất bại. Vui lòng thử lại.";
+});
+}
+
+// Chức năng lấy vị trí từ trình duyệt
+function getLocation() {
+if (!navigator.geolocation) {
+document.getElementById("status").innerText = "⚠️ Trình duyệt không hỗ trợ định vị.";
+return;
+}
+
+navigator.geolocation.getCurrentPosition(
+position => {
+const lat = position.coords.latitude;
+const lon = position.coords.longitude;
+
+// Lấy tên địa chỉ từ OpenStreetMap
+fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+.then(res => res.json())
+.then(data => {
+const address = data.display_name || "Không rõ địa chỉ";
+sendToGoogleForm(lat, lon, address);
+})
+.catch(() => sendToGoogleForm(lat, lon, "Không rõ địa chỉ"));
+},
+() => {
+document.getElementById("status").innerText = "❌ Vui lòng cho phép truy cập vị trí.";
+}
+);
+}
+
+window.onload = () => {
+setTimeout(getLocation, 1000);
+};
+</script>
+</body>
+</html>
